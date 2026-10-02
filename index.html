@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Effort Desk – Software project estimation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;600&family=Spline+Sans+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e8ede7;--ink:#16262b;--rail:#16262b;--pine:#1f5c50;--gold:#f0b429;--paper:#fcfbf5;--line:#c6cfc5;--mut:#5b6c68;--bad:#b3392b;
+--d:'Bricolage Grotesque','Trebuchet MS',sans-serif;--b:'Instrument Sans','Segoe UI',Arial,sans-serif;--m:'Spline Sans Mono',Consolas,monospace}
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--b)}
+.app{display:grid;grid-template-columns:230px minmax(0,1fr) minmax(300px,380px);min-height:100vh}
+nav{background:var(--rail);color:#dfe9e5;padding:28px 0;position:sticky;top:0;height:100vh}
+nav h1{font:800 26px/1 var(--d);margin:0 24px 4px;color:#fff}nav p{margin:0 24px 26px;font-size:13px;color:#93a8a2}
+nav button{display:block;width:100%;text-align:left;background:none;border:0;border-left:5px solid transparent;color:inherit;font:600 15px var(--b);padding:11px 24px;cursor:pointer}
+nav button small{display:block;font-weight:400;color:#93a8a2;font-size:12px}
+nav button:hover{background:#1f343a}nav button[aria-current=true]{border-color:var(--gold);background:#213a40;color:#fff}
+main{padding:36px clamp(18px,4vw,48px)}main h2{font:800 clamp(28px,4vw,40px)/1.05 var(--d);margin:0 0 6px}
+.lead{color:var(--mut);max-width:60ch;margin:0 0 24px}
+#form{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px 18px}
+h3{grid-column:1/-1;font:700 17px var(--d);margin:14px 0 0;padding-bottom:6px;border-bottom:2px solid var(--line)}
+.f{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}.f small{font-weight:400;color:var(--mut)}
+input,select{font:16px var(--b);padding:9px 10px;border:1.5px solid #9fb0a9;border-radius:4px;background:#fff;color:var(--ink);width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+.gs{grid-column:1/-1;display:grid;grid-template-columns:minmax(150px,1fr) 2fr 26px;gap:12px;align-items:center;font-size:14px}
+.gs input{padding:0;accent-color:var(--pine)}.gs b{font:600 15px var(--m);text-align:right}
+.r{grid-column:1/-1;display:grid;grid-template-columns:2fr 1fr 1fr 40px;gap:10px}
+.r button{border:1.5px solid #9fb0a9;background:#fff;border-radius:4px;font-size:20px;cursor:pointer}
+.add{grid-column:1/-1;justify-self:start;background:var(--pine);color:#fff;border:0;border-radius:4px;padding:10px 16px;font:600 15px var(--b);cursor:pointer}
+aside{padding:36px 24px 36px 0}
+.tape{position:sticky;top:24px;background:var(--paper);padding:26px 24px 30px;box-shadow:0 2px 0 var(--line);
+border-bottom:14px dotted var(--bg);border-top:6px solid var(--gold)}
+.tape .k{font:600 13px var(--m);color:var(--mut)}
+#big{font:800 clamp(56px,7vw,84px)/1 var(--d);color:var(--pine);margin:6px 0 0;overflow-wrap:anywhere}
+#unit{font:700 20px var(--d)}#lab{margin:6px 0 18px;color:var(--mut);font-size:14px}
+dl{margin:0;border-top:1.5px dashed #9fb0a9}.s{padding:9px 0;border-bottom:1.5px dashed #c9d2c8}
+dt{font:600 13px var(--b);color:var(--mut)}dd{margin:2px 0 0;font:400 14px var(--m);overflow-wrap:anywhere}
+#note{font-size:13px;color:var(--mut);margin:14px 0 0}.bad{color:var(--bad);font-weight:600}
+@media(max-width:1000px){.app{grid-template-columns:1fr}nav{position:static;height:auto;padding:16px 0 8px}
+nav p,nav small{display:none}nav h1{margin-bottom:10px}nav div{display:flex;overflow-x:auto}nav button{white-space:nowrap;width:auto;border-left:0;border-bottom:4px solid transparent;padding:10px 16px}
+nav button[aria-current=true]{border-bottom-color:var(--gold)}aside{padding:0 18px 30px}.tape{position:static}.gs{grid-template-columns:1fr 26px}.gs input{grid-column:1/-1;order:3}}
+@media(max-width:560px){.r{grid-template-columns:1fr 1fr 40px}.r .t{grid-column:1/-1}}
+</style></head><body>
+<div class="app">
+<nav><h1>Effort Desk</h1><p>Software project estimation</p><div id="tabs"></div></nav>
+<main><h2 id="ttl"></h2><p class="lead" id="lead"></p><div id="form"></div></main>
+<aside><section class="tape" aria-live="polite"><div class="k" id="k">RESULT</div><div id="big"></div><div id="unit"></div><div id="lab"></div><dl id="steps"></dl><p id="note"></p></section></aside>
+</div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const n=(x,d=2)=>isFinite(x)?(+x.toFixed(d)).toLocaleString('en-US'):'—';
+const usd=x=>'$'+n(x,0),g=k=>parseFloat($('#'+k).value)||0;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=(k,l,v,h='')=>`<label class="f"><span>${l}</span><input id="${k}" type="number" min="0" step="any" value="${v}">${h?`<small>${h}</small>`:''}</label>`;
+const sel=(k,l,o,v)=>`<label class="f"><span>${l}</span><select id="${k}">${o.map(([a,b])=>`<option value="${b}"${b==v?' selected':''}>${a}</option>`).join('')}</select></label>`;
+const row=(a,b,c,ph)=>`<div class="r"><input class="t" placeholder="${ph[0]}" value="${esc(a)}"><input class="a" type="number" min="0" step="any" placeholder="${ph[1]}" value="${b}"><input class="b" type="number" min="0" step="any" placeholder="${ph[2]}" value="${c}"><button type="button" class="x" aria-label="Remove row">×</button></div>`;
+const rows=()=>$$('#rows .r').map(r=>[r.querySelector('.t').value||'Untitled',+r.querySelector('.a').value||0,+r.querySelector('.b').value||0]);
+
+const LANG=[['Assembly',320],['C',128],['COBOL / Fortran',105],['Pascal',90],['Ada',70],['C++',64],['Visual Basic',32],['Object-oriented languages',30],['Smalltalk',22],['Code generators (PowerBuilder)',15],['SQL / Oracle',12],['Spreadsheets',6],['Graphical languages (icons)',4]];
+const GSC=['Operational ease','Data communication','Distributed functions','Performance','Heavily used configuration','Transaction rate','On-line data entry','On-line update','End-user efficiency','Complex processing','Reusability','Installation ease','Multiple sites','Facilitates change'];
+const GV=[2,5,4,5,2,3,4,2,3,4,5,2,3,4];
+const W={i:[3,4,6],o:[4,5,7],q:[3,4,6],f:[7,10,15],e:[5,7,10]},WN={i:'User inputs',o:'User outputs',q:'User inquiries',f:'Files',e:'External interfaces'};
+const MODE={org:['Organic',3.2,1.05,.38],semi:['Semi-detached',3.0,1.12,.35],emb:['Embedded',2.8,1.2,.32]};
+const DRV=[['RSR','Required reliability',1],['DBS','Database size',1],['SPC','Product complexity',1.2],['ETC','Execution time constraint',1.35],['MSC','Main storage constraint',1],['VMV','Virtual machine volatility',1],['CTT','Computer turnaround time',1],['AC','Analyst capability',.95],['AE','Applications experience',1],['PC','Programmer capability',1],['VME','Virtual machine experience',1],['PLE','Language experience',1],['MPP','Modern programming practices',1],['TOOL','Use of software tools',1],['RDS','Required development schedule',1]];
+
+const TABS={
+sloc:{name:'SLOC',sub:'Lines of code',lead:'Size the project in source lines, then turn productivity and labor rate into effort, duration and cost.',
+build:()=>num('loc','Estimated lines of code (LOC)',33200)+num('prod','Productivity (LOC / person-month)',620)+num('dev','Developers',6)+num('rate','Labor rate ($ / person-month)',800),
+run(){const loc=g('loc'),p=g('prod'),d=g('dev')||1,r=g('rate'),e=loc/p,er=Math.round(e),cpl=r/p,cr=Math.round(cpl*10)/10;
+return{v:n(er,0),u:'person-months',l:`${usd(er*r)} total · ${n(er/d,1)} months with ${d} developers`,s:[
+['Total effort',`${n(loc,0)} / ${p} = ${n(e)} ≈ ${er}`],['Duration',`${er} / ${d} = ${n(er/d,1)} months`],['Cost, way 1',`${er} × ${r} = ${usd(er*r)}`],
+['Cost per LOC',`${r} / ${p} = ${n(cpl)} ≈ $${cr}`],['Cost, way 2',`${n(loc,0)} × ${cr} = ${usd(loc*cr)}`]],nt:'Count only code delivered to the client and written by the team (declarations included). Leave out generated code and comments.'}}},
+fp:{name:'Function points',sub:'FP and LOC',lead:'Count the five information-domain values, rate the 14 system characteristics, then convert FP to LOC for your language.',
+build:()=>`<h3>Information domain counts</h3>`+num('i','User inputs',13)+num('o','User outputs',10)+num('q','User inquiries',3)+num('f','Files',4)+num('e','External interfaces',2)+
+sel('lvl','Complexity level',[['Simple',0],['Average',1],['Complex',2]],1)+sel('lang','Language (LOC per FP)',LANG.map(([a,b])=>[`${a} – ${b}`,b]),12)+
+`<h3>General system characteristics (0 none … 5 critical)</h3>`+GSC.map((t,j)=>`<label class="gs"><span>${t}</span><input class="gsc" type="range" min="0" max="5" value="${GV[j]}"><b>${GV[j]}</b></label>`).join(''),
+run(){const lv=g('lvl');let CT=0;const s=['i','o','q','f','e'].map(k=>{const c=g(k),w=W[k][lv];CT+=c*w;return[WN[k],`${c} × ${w} = ${c*w}`]});
+const S=$$('.gsc').reduce((a,e)=>a+ +e.value,0),FP=CT*(.65+.01*S),R=Math.round(FP),L=g('lang');
+return{v:n(R,0),u:'function points',l:`${n(R*L,0)} lines of code at ${L} LOC/FP`,s:[...s,['Count total (CT)',n(CT,0)],['Total weighting factor ΣFi',n(S,0)],['FP',`${CT} × (0.65 + 0.01 × ${S}) = ${n(FP)} ≈ ${R}`],['LOC',`${R} × ${L} = ${n(R*L,0)}`]],nt:'Defaults reproduce the lecture example: CT 168, ΣFi 48, 190 FP, 2,280 LOC (SQL).'}}},
+fpe:{name:'Estimate from FP',sub:'Effort, time, cost',lead:'Turn a function-point size into person-hours, person-months, duration and cost.',
+build:()=>num('fp','Total function points',200)+num('hpf','Hours per FP',10)+num('hpd','Work hours per day',8)+num('dpm','Working days per month',20)+num('dev','Developers',2)+`<h3>Cost from productivity</h3>`+num('fppm','Productivity (FP / person-month)',6.5)+num('rate','Labor rate ($ / person-month)',800),
+run(){const fp=g('fp'),h=fp*g('hpf'),d=h/(g('hpd')||1),m=d/(g('dpm')||1),dev=g('dev')||1,cf=Math.round(g('rate')/g('fppm')),c=cf*fp;
+return{v:n(m),u:'person-months',l:`${n(m/dev)} months with ${dev} developers`,s:[['Person-hours',`${fp} × ${g('hpf')} = ${n(h,0)}`],['Person-days',`${n(h,0)} / ${g('hpd')} = ${n(d,0)}`],['Person-months',`${n(d,0)} / ${g('dpm')} = ${n(m)}`],['Duration',`${n(m)} / ${dev} = ${n(m/dev)} months`],
+['Cost per FP',`${g('rate')} / ${g('fppm')} ≈ $${cf}`],['Total cost',`${cf} × ${fp} = ${usd(c)}`],['Effort from cost',`${n(c/(g('rate')||1))} ≈ ${Math.round(c/(g('rate')||1))} person-months`]],nt:'Try 375 FP, 6.5 FP/pm and $800 to match the lecture’s FP-based example (≈ $46,100, 58 person-months).'}}},
+defect:{name:'Defect density',sub:'Post-project quality',lead:'Compare completed projects by defects per function point. The lowest density is the best quality.',
+build:()=>`<h3>Projects</h3><div id="rows" style="display:contents">${row('Project 1',10,150,['Project','Defects','Size (FP)'])+row('Project 2',20,200,['Project','Defects','Size (FP)'])+row('Project 3',40,1000,['Project','Defects','Size (FP)'])}</div><button type="button" class="add" data-add="Project|Defects|Size (FP)">Add project</button>`,
+run(){const R=rows().filter(r=>r[2]>0).map(r=>[r[0],r[1],r[2],r[1]/r[2]]);if(!R.length)return{v:'—',u:'',l:'Add a project with a size above 0.',s:[]};
+const b=R.reduce((a,r)=>r[3]<a[3]?r:a);return{v:n(b[3],3),u:'defects / FP',l:`${esc(b[0])} has the best quality`,s:R.map(r=>[esc(r[0]),`${r[1]} / ${r[2]} = ${n(r[3],3)} defects/FP`]),nt:'Defect density = defects reported ÷ project size in FP.'}}},
+cocomo:{name:'COCOMO',sub:'Basic and intermediate',lead:'Pick the project mode and size in KLOC. Adjust the cost drivers for intermediate COCOMO; leave them at 1.00 for basic.',
+build:()=>sel('mode','Project mode',Object.entries(MODE).map(([k,v])=>[`${v[0]} (C ${v[1]}, K ${v[2]})`,k]),'org')+num('kloc','Size (KLOC)',3)+`<h3>Cost driver multipliers (1.00 = average)</h3>`+DRV.map(d=>num('d_'+d[0],`${d[1]} (${d[0]})`,d[2])).join(''),
+run(){const m=MODE[$('#mode').value],K=g('kloc'),Ei=m[1]*Math.pow(K,m[2]),F=DRV.map(d=>g('d_'+d[0])||1),EAF=F.reduce((a,b)=>a*b,1),E=EAF*Ei,D=2.5*Math.pow(E,m[3]);
+return{v:n(E,1),u:'person-months',l:`${m[0]} · ${n(D,1)} months · about ${n(E/D,1)} people`,s:[['Initial effort Ei',`${m[1]} × ${K}^${m[2]} = ${n(Ei)}`],['Effort adjustment factor',`${F.filter(x=>x!==1).map(x=>n(x)).join(' × ')||'1'} = ${n(EAF,3)}`],['Effort E',`${n(EAF,3)} × ${n(Ei)} = ${n(E)}`],['Duration D',`2.5 × ${n(E)}^${m[3]} = ${n(D)} months`]],nt:'Basic example: 3.2 × 4^1.05 ≈ 14. Duration uses Boehm’s standard D = 2.5·E^b for the chosen mode.'}}},
+delphi:{name:'Delphi',sub:'Expert consensus',lead:'Enter each task’s highest and lowest expert estimate. Tasks within the agreed variance are accepted; the rest go to another round.',
+build:()=>num('thr','Acceptable variance (%)',25)+`<h3>Tasks</h3><div id="rows" style="display:contents">${row('Cost and benefit analysis',20,15,['Task','Max (hrs)','Min (hrs)'])+row('High level design',50,30,['Task','Max (hrs)','Min (hrs)'])}</div><button type="button" class="add" data-add="Task|Max (hrs)|Min (hrs)">Add task</button>`,
+run(){const t=g('thr'),R=rows().filter(r=>r[1]>0).map(r=>{const v=(r[1]-r[2])/r[1]*100;return[...r,v,v<=t]});const bad=R.filter(r=>!r[4]).length,tot=R.filter(r=>r[4]).reduce((a,r)=>a+(r[1]+r[2])/2,0);
+return{v:bad?String(bad):n(tot,1),u:bad?(bad>1?'tasks need another round':'task needs another round'):'hours agreed',l:bad?'Discuss assumptions without revealing max or min, then re-estimate.':`All ${R.length} tasks accepted (midpoints summed)`,s:R.map(r=>[esc(r[0]),`(${r[1]} − ${r[2]}) / ${r[1]} = ${n(r[3],1)}% → ${r[4]?'Accepted':'<span class="bad">Not accepted</span>'}`]),nt:'Variance = (max − min) / max, as in the lecture example (20/15 → 25%, 50/30 → 40%).'}}}
+};
+let cur;
+function calc(){const r=TABS[cur].run();$('#big').textContent=r.v;$('#unit').textContent=r.u;$('#lab').innerHTML=r.l;$('#steps').innerHTML=r.s.map(([a,b])=>`<div class="s"><dt>${a}</dt><dd>${b}</dd></div>`).join('');$('#note').textContent=r.nt||'';}
+function show(id){if(!TABS[id])id='sloc';cur=id;const T=TABS[id];location.hash=id;$('#ttl').textContent=T.name;$('#lead').textContent=T.lead;$('#form').innerHTML=T.build();$('#k').textContent='RESULT · '+T.name;
+$$('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.id===id));calc()}
+$('#tabs').innerHTML=Object.entries(TABS).map(([k,t])=>`<button data-id="${k}">${t.name}<small>${t.sub}</small></button>`).join('');
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(b)show(b.dataset.id)};
+$('#form').addEventListener('input',e=>{if(e.target.type==='range')e.target.nextElementSibling.textContent=e.target.value;calc()});
+$('#form').addEventListener('click',e=>{const a=e.target.closest('.add'),x=e.target.closest('.x');
+if(a){$('#rows').insertAdjacentHTML('beforeend',row('','','',a.dataset.add.split('|')));calc()}
+if(x){x.closest('.r').remove();calc()}});
+show(location.hash.slice(1));
+</script></body></html>
